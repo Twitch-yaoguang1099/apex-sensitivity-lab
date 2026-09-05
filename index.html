@@ -23,13 +23,13 @@ button{border:0;border-radius:9px;padding:10px;background:#263244;color:white;cu
 </head>
 <body>
 <aside class="side">
-<h1>Apex Sensitivity Lab</h1><div class="sub">跟槍、定位、反應、A/B 盲測。紀錄只存在你的瀏覽器。</div>
+<h1>Apex Sensitivity Lab <span style='font-size:11px;color:#41d17d'>v1.1</span></h1><div class="sub">跟槍、定位、反應、A/B 盲測。紀錄只存在你的瀏覽器。</div>
 
 <div class="card"><h2>靈敏度</h2>
 <div class="row"><div><label>DPI</label><input id="dpi" type="number" value="4000" step="50"></div><div><label>Apex 腰射</label><input id="sens" type="number" value="0.32" step="0.01"></div></div>
 <div class="row"><div><label>ADS 倍率</label><input id="ads" type="number" value="1.00" step="0.05"></div><div><label>目標大小</label><select id="size"><option value="34">小</option><option value="48" selected>中</option><option value="66">大</option></select></div></div>
 <div class="stats" style="margin-top:9px"><div class="stat"><span>eDPI</span><b id="edpi"></b></div><div class="stat"><span>約 cm/360</span><b id="cm360"></b></div></div>
-<div class="small" style="margin-top:7px">cm/360 以 Apex 常用 yaw 0.022°/count 估算。瀏覽器與遊戲 Raw Input 不會完全 1:1，適合用來比較不同靈敏度的相對表現。</div>
+<div class="small" style="margin-top:7px">cm/360 以 Apex 常用 yaw 0.022°/count 估算。瀏覽器與遊戲 Raw Input 不會完全 1:1，適合用來比較不同靈敏度的相對表現。</div><div class="small" style="margin-top:5px">準星速度會直接跟隨「Apex 腰射」數值：例如 0.16 約為 0.32 的一半速度，0.64 約為兩倍速度。</div>
 </div>
 
 <div class="card"><h2>測試模式</h2>
@@ -83,7 +83,11 @@ function begin(){
 function finish(){if(!run)return;run=false;startAt=0;endAt=0;cancelAnimationFrame(raf);clearTimeout(timer);target.classList.add("hidden");$("start").disabled=false;$("stop").disabled=true;document.exitPointerLock?.();let rt=rts.length?Math.round(rts.reduce((a,b)=>a+b,0)/rts.length):null;let rec={date:new Date().toLocaleString(),mode:$("mode").value,dpi:+$("dpi").value,sens:+$("sens").value,ads:+$("ads").value,score:Math.round(score),acc:shots?Math.round(hits/shots*100):0,rt};save(rec);msg.classList.remove("hidden");msg.innerHTML="<h3>完成！</h3><div class='small'>分數 <b>"+rec.score+"</b>　命中率 <b>"+rec.acc+"%</b>"+(rt?"　平均反應 <b>"+rt+" ms</b>":"")+"</div>";if(abMode)nextAB(rec)}
 function loop(now){if(!run)return;let dt=Math.min(.033,(now-last)/1000);last=now;let left=Math.max(0,endAt-now);$("time").textContent=(left/1000).toFixed(1);if($("mode").value==="tracking"){let r=+$("size").value/2,w=arena.clientWidth,h=arena.clientHeight;tx+=vx*dt;ty+=vy*dt;if(tx<r||tx>w-r){vx*=-1;tx=Math.max(r,Math.min(w-r,tx))}if(ty<r||ty>h-r){vy*=-1;ty=Math.max(r,Math.min(h-r,ty))}target.style.left=tx+"px";target.style.top=ty+"px";if(Math.hypot(cx-tx,cy-ty)<r)score+=dt*100}stats();if(left<=0)return finish();raf=requestAnimationFrame(loop)}
 
-arena.onmousemove=e=>{if(!run||document.pointerLockElement!==arena)return;let scale=(+$("sens").value||.32)/.32;cx=Math.max(0,Math.min(arena.clientWidth,cx+e.movementX*scale));cy=Math.max(0,Math.min(arena.clientHeight,cy+e.movementY*scale));cross.style.left=cx+"px";cross.style.top=cy+"px"};
+arena.onmousemove=e=>{if(!run||document.pointerLockElement!==arena)return;const apexSens=Math.max(0.01,+$("sens").value||0.32);
+  const SCREEN_CALIBRATION=3.125;
+  const scale=apexSens*SCREEN_CALIBRATION;
+  cx=Math.max(0,Math.min(arena.clientWidth,cx+e.movementX*scale));
+  cy=Math.max(0,Math.min(arena.clientHeight,cy+e.movementY*scale));cross.style.left=cx+"px";cross.style.top=cy+"px"};
 arena.onmousedown=async e=>{
   if(!run)return;
   if(document.pointerLockElement!==arena){
