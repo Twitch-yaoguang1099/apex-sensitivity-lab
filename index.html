@@ -23,13 +23,13 @@ button{border:0;border-radius:9px;padding:10px;background:#263244;color:white;cu
 </head>
 <body>
 <aside class="side">
-<h1>Apex Sensitivity Lab <span style='font-size:11px;color:#41d17d'>v1.1</span></h1><div class="sub">跟槍、定位、反應、A/B 盲測。紀錄只存在你的瀏覽器。</div>
+<h1>Apex Sensitivity Lab <span style='font-size:11px;color:#41d17d'>v1.2</span></h1><div class="sub">跟槍、定位、反應、A/B 盲測。紀錄只存在你的瀏覽器。</div>
 
 <div class="card"><h2>靈敏度</h2>
 <div class="row"><div><label>DPI</label><input id="dpi" type="number" value="4000" step="50"></div><div><label>Apex 腰射</label><input id="sens" type="number" value="0.32" step="0.01"></div></div>
 <div class="row"><div><label>ADS 倍率</label><input id="ads" type="number" value="1.00" step="0.05"></div><div><label>目標大小</label><select id="size"><option value="34">小</option><option value="48" selected>中</option><option value="66">大</option></select></div></div>
 <div class="stats" style="margin-top:9px"><div class="stat"><span>eDPI</span><b id="edpi"></b></div><div class="stat"><span>約 cm/360</span><b id="cm360"></b></div></div>
-<div class="small" style="margin-top:7px">cm/360 以 Apex 常用 yaw 0.022°/count 估算。瀏覽器與遊戲 Raw Input 不會完全 1:1，適合用來比較不同靈敏度的相對表現。</div><div class="small" style="margin-top:5px">準星速度會直接跟隨「Apex 腰射」數值：例如 0.16 約為 0.32 的一半速度，0.64 約為兩倍速度。</div>
+<div class="small" style="margin-top:7px">cm/360 以 Apex 常用 yaw 0.022°/count 估算。瀏覽器與遊戲 Raw Input 不會完全 1:1，適合用來比較不同靈敏度的相對表現。</div><div class="small" style="margin-top:5px">準星速度會直接跟隨「Apex 腰射」數值：例如 0.16 約為 0.32 的一半速度，0.64 約為兩倍速度。</div><div class="stat" style="margin-top:8px"><span>目前準星速度倍率（以 0.32 = 1.00×）</span><b id="speedMul">1.00×</b></div>
 </div>
 
 <div class="card"><h2>測試模式</h2>
@@ -49,7 +49,7 @@ button{border:0;border-radius:9px;padding:10px;background:#263244;color:white;cu
 <div class="card"><h2>歷史紀錄</h2><div class="btns"><button id="clear">清除</button><button id="csv">匯出 CSV</button></div><div id="results" class="results"></div></div>
 </aside>
 
-<main class="main"><div class="top"><b id="title">Tracking 跟槍</b><span class="small">點場地鎖定滑鼠｜Esc 解除</span></div>
+<main class="main"><div class="top"><b id="title">Tracking 跟槍</b><span class="small">點場地鎖定滑鼠｜Esc 解除｜即時速度 <b id="topSpeed">1.00×</b></span></div>
 <div class="wrap"><div id="arena" class="arena"><div id="cross" class="cross"></div><div id="target" class="target hidden"></div>
 <div id="msg" class="msg"><h3>準備好了就開始</h3><div class="small">按「開始測試」，再點一下測試區域。左鍵射擊；Tracking 模式盡量把準星維持在目標上。</div></div>
 </div></div></main>
@@ -59,7 +59,15 @@ const $=x=>document.getElementById(x),arena=$("arena"),target=$("target"),cross=
 let run=false,startAt=0,endAt=0,raf=0,timer=0,score=0,shots=0,hits=0,rts=[],tx=0,ty=0,vx=0,vy=0,cx=0,cy=0,last=0;
 let abMode=false,abRound=0,abOrder=[],abScores=[];
 
-function calc(){let d=+$("dpi").value||0,s=+$("sens").value||0;$("edpi").textContent=Math.round(d*s);let cm=2.54*360/(d*s*.022);$("cm360").textContent=isFinite(cm)?cm.toFixed(1):"—"}
+function calc(){
+  let d=+$("dpi").value||0,s=+$("sens").value||0;
+  $("edpi").textContent=Math.round(d*s);
+  let cm=2.54*360/(d*s*.022);
+  $("cm360").textContent=isFinite(cm)?cm.toFixed(1):"—";
+  const mul=s/0.32;
+  const sm=$("speedMul");
+  if(sm) sm.textContent=(isFinite(mul)?mul:0).toFixed(2)+"×"; const ts=$("topSpeed"); if(ts) ts.textContent=(isFinite(mul)?mul:0).toFixed(2)+"×";
+}
 ["dpi","sens"].forEach(x=>$(x).oninput=calc);calc();
 
 $("mode").onchange=()=>{$("title").textContent=$("mode").value==="tracking"?"Tracking 跟槍":$("mode").value==="flick"?"Flick 定位":"Reaction 反應"};
@@ -83,11 +91,22 @@ function begin(){
 function finish(){if(!run)return;run=false;startAt=0;endAt=0;cancelAnimationFrame(raf);clearTimeout(timer);target.classList.add("hidden");$("start").disabled=false;$("stop").disabled=true;document.exitPointerLock?.();let rt=rts.length?Math.round(rts.reduce((a,b)=>a+b,0)/rts.length):null;let rec={date:new Date().toLocaleString(),mode:$("mode").value,dpi:+$("dpi").value,sens:+$("sens").value,ads:+$("ads").value,score:Math.round(score),acc:shots?Math.round(hits/shots*100):0,rt};save(rec);msg.classList.remove("hidden");msg.innerHTML="<h3>完成！</h3><div class='small'>分數 <b>"+rec.score+"</b>　命中率 <b>"+rec.acc+"%</b>"+(rt?"　平均反應 <b>"+rt+" ms</b>":"")+"</div>";if(abMode)nextAB(rec)}
 function loop(now){if(!run)return;let dt=Math.min(.033,(now-last)/1000);last=now;let left=Math.max(0,endAt-now);$("time").textContent=(left/1000).toFixed(1);if($("mode").value==="tracking"){let r=+$("size").value/2,w=arena.clientWidth,h=arena.clientHeight;tx+=vx*dt;ty+=vy*dt;if(tx<r||tx>w-r){vx*=-1;tx=Math.max(r,Math.min(w-r,tx))}if(ty<r||ty>h-r){vy*=-1;ty=Math.max(r,Math.min(h-r,ty))}target.style.left=tx+"px";target.style.top=ty+"px";if(Math.hypot(cx-tx,cy-ty)<r)score+=dt*100}stats();if(left<=0)return finish();raf=requestAnimationFrame(loop)}
 
-arena.onmousemove=e=>{if(!run||document.pointerLockElement!==arena)return;const apexSens=Math.max(0.01,+$("sens").value||0.32);
-  const SCREEN_CALIBRATION=3.125;
-  const scale=apexSens*SCREEN_CALIBRATION;
-  cx=Math.max(0,Math.min(arena.clientWidth,cx+e.movementX*scale));
-  cy=Math.max(0,Math.min(arena.clientHeight,cy+e.movementY*scale));cross.style.left=cx+"px";cross.style.top=cy+"px"};
+arena.onmousemove=e=>{
+  if(!run||document.pointerLockElement!==arena)return;
+
+  // 0.32 is the baseline. 0.16 = half speed, 0.64 = double speed.
+  const enteredSens=parseFloat($("sens").value);
+  const sens=Number.isFinite(enteredSens)&&enteredSens>0?enteredSens:0.32;
+  const speedMultiplier=sens/0.32;
+
+  const dx=e.movementX*speedMultiplier;
+  const dy=e.movementY*speedMultiplier;
+
+  cx=Math.max(0,Math.min(arena.clientWidth,cx+dx));
+  cy=Math.max(0,Math.min(arena.clientHeight,cy+dy));
+  cross.style.left=cx+"px";
+  cross.style.top=cy+"px";
+};
 arena.onmousedown=async e=>{
   if(!run)return;
   if(document.pointerLockElement!==arena){
@@ -148,6 +167,15 @@ $("csv").onclick=()=>{let x=records();if(!x.length)return alert("目前沒有紀
 
 $("ab").onclick=()=>{if(run)return;let A=+$("a").value,B=+$("b").value;if(!(A>0&&B>0)||A===B)return alert("請輸入兩個不同靈敏度");abMode=true;abRound=0;abScores=[];abOrder=Math.random()<.5?[A,B]:[B,A];$("sens").value=abOrder[0];$("sens").style.webkitTextSecurity="disc";calc();$("abtxt").textContent="盲測第 1 / 2 輪：目前靈敏度已隱藏。";begin()};
 function nextAB(rec){abScores.push({...rec,secret:abOrder[abRound]});abRound++;if(abRound<2){$("sens").value=abOrder[1];calc();$("abtxt").textContent="盲測第 2 / 2 輪即將開始…";setTimeout(()=>{if(abMode&&!run)begin()},900)}else{abMode=false;$("sens").style.webkitTextSecurity="";let x=abScores[0],y=abScores[1],w=x.score===y.score?null:(x.score>y.score?x:y);$("sens").value=w?w.secret:x.secret;calc();$("abtxt").innerHTML="公布：第1輪 = "+x.secret+"（"+x.score+"分），第2輪 = "+y.secret+"（"+y.score+"分）。<br><b>"+(w?"較高分："+w.secret:"兩者平手")+"</b>"}}
+
+document.addEventListener("keydown",e=>{
+  if(e.key==="1"||e.key==="2"||e.key==="3"){
+    const vals={"1":"0.10","2":"0.32","3":"1.00"};
+    $("sens").value=vals[e.key];
+    calc();
+  }
+});
+
 </script>
 
 <script>
