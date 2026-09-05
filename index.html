@@ -23,7 +23,7 @@ button{border:0;border-radius:9px;padding:10px;background:#263244;color:white;cu
 </head>
 <body>
 <aside class="side">
-<h1>Apex Sensitivity Lab <span style='font-size:11px;color:#41d17d'>v1.3</span></h1><div class="sub">跟槍、定位、反應、A/B 盲測。紀錄只存在你的瀏覽器。</div>
+<h1>Apex Sensitivity Lab <span style='font-size:11px;color:#41d17d'>v1.4</span></h1><div class="sub">跟槍、定位、反應、A/B 盲測。紀錄只存在你的瀏覽器。</div>
 
 <div class="card"><h2>靈敏度</h2>
 <div class="row"><div><label>DPI</label><input id="dpi" type="number" value="4000" step="50"></div><div><label>Apex 腰射</label><input id="sens" type="number" value="0.32" step="0.01"></div></div>
@@ -66,7 +66,7 @@ button{border:0;border-radius:9px;padding:10px;background:#263244;color:white;cu
 <div class="card"><h2>歷史紀錄</h2><div class="btns"><button id="clear">清除</button><button id="csv">匯出 CSV</button></div><div id="results" class="results"></div></div>
 </aside>
 
-<main class="main"><div class="top"><b id="title">Tracking 跟槍</b><span class="small">點場地鎖定滑鼠｜Esc 解除｜即時速度 <b id="topSpeed">1.00×</b></span></div>
+<main class="main"><div class="top"><b id="title">Tracking 跟槍</b><span class="small">點場地鎖定滑鼠｜Esc 解除｜即時速度 <b id="topSpeed">1.00×</b>｜模式 <b id="adsState">腰射</b></span></div>
 <div class="wrap"><div id="arena" class="arena"><div id="cross" class="cross"></div><div id="target" class="target hidden"></div>
 <div id="msg" class="msg"><h3>準備好了就開始</h3><div class="small">按「開始測試」，再點一下測試區域。左鍵射擊；Tracking 模式盡量把準星維持在目標上。</div></div>
 </div></div></main>
@@ -74,7 +74,7 @@ button{border:0;border-radius:9px;padding:10px;background:#263244;color:white;cu
 <script>
 const $=x=>document.getElementById(x),arena=$("arena"),target=$("target"),cross=$("cross"),msg=$("msg");
 let run=false,startAt=0,endAt=0,raf=0,timer=0,score=0,shots=0,hits=0,rts=[],tx=0,ty=0,vx=0,vy=0,cx=0,cy=0,last=0;let fireTimer=0,leftHeld=false;
-let abMode=false,abRound=0,abOrder=[],abScores=[];
+let abMode=false,abRound=0,abOrder=[],abScores=[];let adsHeld=false;
 
 function calc(){
   let d=+$("dpi").value||0,s=+$("sens").value||0;
@@ -85,7 +85,7 @@ function calc(){
   const sm=$("speedMul");
   if(sm) sm.textContent=(isFinite(mul)?mul:0).toFixed(2)+"×"; const ts=$("topSpeed"); if(ts) ts.textContent=(isFinite(mul)?mul:0).toFixed(2)+"×";
 }
-["dpi","sens"].forEach(x=>$(x).oninput=calc);calc();
+["dpi","sens"].forEach(x=>$(x).oninput=calc);$("ads").oninput=()=>{if(adsHeld)updateADSIndicator();};calc();
 
 $("mode").onchange=()=>{$("title").textContent=$("mode").value==="tracking"?"Tracking 跟槍":$("mode").value==="flick"?"Flick 定位":"Reaction 反應"};
 
@@ -105,7 +105,7 @@ function begin(){
   msg.classList.remove("hidden");
   msg.innerHTML="<h3>點一下測試區域</h3><div class='small'>瀏覽器需要你親自點擊場地，才能鎖定滑鼠。鎖定後測試才會開始；按 Esc 可解除。</div>";
 }
-function finish(){if(!run)return;run=false;startAt=0;endAt=0;stopContinuousFire();leftHeld=false;cancelAnimationFrame(raf);clearTimeout(timer);target.classList.add("hidden");$("start").disabled=false;$("stop").disabled=true;document.exitPointerLock?.();let rt=rts.length?Math.round(rts.reduce((a,b)=>a+b,0)/rts.length):null;let rec={date:new Date().toLocaleString(),mode:$("mode").value,dpi:+$("dpi").value,sens:+$("sens").value,ads:+$("ads").value,score:Math.round(score),acc:shots?Math.round(hits/shots*100):0,rt};save(rec);msg.classList.remove("hidden");msg.innerHTML="<h3>完成！</h3><div class='small'>分數 <b>"+rec.score+"</b>　命中率 <b>"+rec.acc+"%</b>"+(rt?"　平均反應 <b>"+rt+" ms</b>":"")+"</div>";if(abMode)nextAB(rec)}
+function finish(){if(!run)return;run=false;startAt=0;endAt=0;stopContinuousFire();leftHeld=false;adsHeld=false;updateADSIndicator();cancelAnimationFrame(raf);clearTimeout(timer);target.classList.add("hidden");$("start").disabled=false;$("stop").disabled=true;document.exitPointerLock?.();let rt=rts.length?Math.round(rts.reduce((a,b)=>a+b,0)/rts.length):null;let rec={date:new Date().toLocaleString(),mode:$("mode").value,dpi:+$("dpi").value,sens:+$("sens").value,ads:+$("ads").value,score:Math.round(score),acc:shots?Math.round(hits/shots*100):0,rt};save(rec);msg.classList.remove("hidden");msg.innerHTML="<h3>完成！</h3><div class='small'>分數 <b>"+rec.score+"</b>　命中率 <b>"+rec.acc+"%</b>"+(rt?"　平均反應 <b>"+rt+" ms</b>":"")+"</div>";if(abMode)nextAB(rec)}
 function loop(now){if(!run)return;let dt=Math.min(.033,(now-last)/1000);last=now;let left=Math.max(0,endAt-now);$("time").textContent=(left/1000).toFixed(1);if($("mode").value==="tracking"){let r=+$("size").value/2,w=arena.clientWidth,h=arena.clientHeight;tx+=vx*dt;ty+=vy*dt;if(tx<r||tx>w-r){vx*=-1;tx=Math.max(r,Math.min(w-r,tx))}if(ty<r||ty>h-r){vy*=-1;ty=Math.max(r,Math.min(h-r,ty))}target.style.left=tx+"px";target.style.top=ty+"px";if(Math.hypot(cx-tx,cy-ty)<r)score+=dt*100}stats();if(left<=0)return finish();raf=requestAnimationFrame(loop)}
 
 arena.onmousemove=e=>{
@@ -113,8 +113,14 @@ arena.onmousemove=e=>{
 
   // 0.32 is the baseline. 0.16 = half speed, 0.64 = double speed.
   const enteredSens=parseFloat($("sens").value);
-  const sens=Number.isFinite(enteredSens)&&enteredSens>0?enteredSens:0.32;
-  const speedMultiplier=sens/0.32;
+  const hipSens=Number.isFinite(enteredSens)&&enteredSens>0?enteredSens:0.32;
+  const enteredAds=parseFloat($("ads").value);
+  const adsMultiplier=Number.isFinite(enteredAds)&&enteredAds>0?enteredAds:1.0;
+
+  // Hipfire uses the entered Apex sensitivity.
+  // Holding RMB switches to hip sensitivity × ADS multiplier.
+  const activeSens=adsHeld ? hipSens*adsMultiplier : hipSens;
+  const speedMultiplier=activeSens/0.32;
 
   const dx=e.movementX*speedMultiplier;
   const dy=e.movementY*speedMultiplier;
@@ -176,6 +182,11 @@ arena.onmousedown=async e=>{
     return;
   }
 
+  if(e.button===2){
+    adsHeld=true;
+    updateADSIndicator();
+    return;
+  }
   if(e.button!==0)return;
   leftHeld=true;
 
@@ -188,6 +199,11 @@ arena.onmousedown=async e=>{
 };
 
 arena.onmouseup=e=>{
+  if(e.button===2){
+    adsHeld=false;
+    updateADSIndicator();
+    return;
+  }
   if(e.button!==0)return;
   leftHeld=false;
   if($("fireMode").value==="hold") stopContinuousFire();
@@ -198,7 +214,24 @@ document.addEventListener("mouseup",e=>{
     leftHeld=false;
     if($("fireMode").value==="hold") stopContinuousFire();
   }
+  if(e.button===2){
+    adsHeld=false;
+    updateADSIndicator();
+  }
 });
+
+arena.addEventListener("contextmenu",e=>e.preventDefault());
+
+function updateADSIndicator(){
+  const ind=$("adsState");
+  if(!ind)return;
+  if(adsHeld){
+    const a=parseFloat($("ads").value)||1;
+    ind.textContent="ADS "+a.toFixed(2)+"×";
+  }else{
+    ind.textContent="腰射";
+  }
+}
 document.addEventListener("pointerlockchange",()=>{
   if(!run)return;
   if(document.pointerLockElement===arena){
@@ -213,7 +246,7 @@ document.addEventListener("pointerlockchange",()=>{
     }
     if($("fireMode").value==="auto") startContinuousFire();
   }else if(run && startAt){
-    stopContinuousFire();
+    adsHeld=false;updateADSIndicator();stopContinuousFire();
     cancelAnimationFrame(raf);
     clearTimeout(timer);
     target.classList.add("hidden");
