@@ -16,25 +16,55 @@ input,select,button{font:inherit}input,select{width:100%;padding:8px;border-radi
 button{border:0;border-radius:9px;padding:10px;background:#263244;color:white;cursor:pointer}.primary{background:var(--accent);font-weight:700}.good{background:var(--good);color:#07140d;font-weight:700}
 .btns{display:flex;gap:8px;margin-top:10px}.btns button{flex:1}.main{flex:1;display:flex;flex-direction:column;min-width:0}.top{height:58px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);background:#0e141d}
 .wrap{flex:1;padding:12px;min-height:0}.arena{position:relative;width:100%;height:100%;overflow:hidden;border:1px solid var(--line);border-radius:15px;background:radial-gradient(circle at center,rgba(255,255,255,.035),transparent 55%),linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);background-size:auto,42px 42px,42px 42px;cursor:crosshair}
-.cross{position:absolute;width:22px;height:22px;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:3}.cross:before,.cross:after{content:"";position:absolute;background:white}.cross:before{width:2px;height:22px;left:10px}.cross:after{height:2px;width:22px;top:10px}
-.target{position:absolute;border-radius:50%;background:#ff4655;box-shadow:0 0 22px rgba(255,70,85,.45);transform:translate(-50%,-50%)}.target:after{content:"";position:absolute;inset:28%;background:white;border-radius:50%}
+.cross{position:absolute;width:8px;height:8px;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:3;background:#39ff14;border-radius:50%;box-shadow:0 0 6px rgba(57,255,20,.9)}.cross:before,.cross:after{display:none}
+.target{position:absolute;border-radius:50%;background:#ff4655;box-shadow:0 0 22px rgba(255,70,85,.45);transform:translate(-50%,-50%)}.target:after{content:"";position:absolute;inset:28%;background:#fff;border-radius:50%}
 .msg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;text-align:center;background:rgba(5,9,14,.82);border:1px solid var(--line);border-radius:13px;padding:18px 22px}.msg h3{margin:0 0 5px}.hidden{display:none!important}.results{font-size:12px;max-height:150px;overflow:auto}.result{display:flex;justify-content:space-between;border-bottom:1px solid #202b3a;padding:6px 0;color:#c8d3df}
 </style>
 </head>
 <body>
 <aside class="side">
-<h1>Apex Sensitivity Lab <span style='font-size:11px;color:#41d17d'>v1.5</span></h1><div class="sub">跟槍、定位、反應、A/B 盲測。紀錄只存在你的瀏覽器。</div>
+<h1>Apex Sensitivity Lab <span style='font-size:11px;color:#41d17d'>v3.0</span></h1><div class="sub">跟槍、定位、反應、A/B 盲測。紀錄只存在你的瀏覽器。</div>
 
 <div class="card"><h2>靈敏度</h2>
-<div class="row"><div><label>DPI</label><input id="dpi" type="number" value="4000" step="50"></div><div><label>Apex 腰射</label><input id="sens" type="text" inputmode="decimal" value="0.32" autocomplete="off" spellcheck="false"></div></div>
-<div class="row"><div><label>ADS 倍率</label><input id="ads" type="text" inputmode="decimal" value="1.00" autocomplete="off" spellcheck="false"></div><div><label>目標大小</label><select id="size"><option value="34">小</option><option value="48" selected>中</option><option value="66">大</option></select></div></div>
+<div class="row"><div><label>DPI</label><input id="dpi" type="text" inputmode="decimal" value="4000"></div><div><label>Apex 腰射</label><input id="sens" type="text" inputmode="decimal" value="0.32" autocomplete="off" spellcheck="false"></div></div>
+<div class="row"><div><label>ADS 倍率</label><input id="ads" type="text" inputmode="decimal" value="1.00" autocomplete="off" spellcheck="false"></div>
+<div class="row">
+  <div><label>FOV</label><input id="fov" type="text" inputmode="decimal" value="110" autocomplete="off"></div>
+  <div><label>瞄具倍率</label>
+    <select id="optic">
+      <option value="1" selected>1×</option>
+      <option value="2">2×</option>
+      <option value="3">3×</option>
+      <option value="4">4×</option>
+      <option value="6">6×</option>
+      <option value="8">8×</option>
+      <option value="10">10×</option>
+    </select>
+  </div>
+</div>
+<div class="small" style="margin-top:5px">腰射以 eDPI（DPI × Sens）為基準；ADS 再套用瞄具 FOV 縮放與 ADS 倍率。</div>
+<div><label>目標大小</label><select id="size"><option value="34">小（1080p 基準 34px）</option><option value="48" selected>中（1080p 基準 48px）</option><option value="66">大（1080p 基準 66px）</option></select><div class="small">目前實際大小：<b id="targetSizeNow">—</b></div></div></div>
 <div class="stats" style="margin-top:9px"><div class="stat"><span>eDPI</span><b id="edpi"></b></div><div class="stat"><span>約 cm/360</span><b id="cm360"></b></div></div>
-<div class="small" style="margin-top:7px">cm/360 以 Apex 常用 yaw 0.022°/count 估算。瀏覽器與遊戲 Raw Input 不會完全 1:1，適合用來比較不同靈敏度的相對表現。</div><div class="small" style="margin-top:5px">準星速度會直接跟隨「Apex 腰射」數值：例如 0.16 約為 0.32 的一半速度，0.64 約為兩倍速度。</div><div class="stat" style="margin-top:8px"><span>目前準星速度倍率（以 0.32 = 1.00×）</span><b id="speedMul">1.00×</b></div>
+<div class="small" style="margin-top:7px">cm/360 以 Apex 常用 yaw 0.022°/count 估算。瀏覽器與遊戲 Raw Input 不會完全 1:1，適合用來比較不同靈敏度的相對表現。</div><div class="small" style="margin-top:5px">準星速度會直接跟隨「Apex 腰射」數值：例如 0.16 約為 0.32 的一半速度，0.64 約為兩倍速度。</div><div class="small" style="margin-top:5px">所有可輸入數值皆不設上下限、不自動四捨五入，也不會改寫你輸入的內容。</div><div class="stat" style="margin-top:8px"><span>目前準星速度倍率（以 0.32 = 1.00×）</span><b id="speedMul">1.00×</b></div>
 </div>
 
 <div class="card"><h2>測試模式</h2>
-<label>模式</label><select id="mode"><option value="tracking">Tracking 跟槍</option><option value="flick">Flick 定位</option><option value="reaction">Reaction 反應</option></select>
-<div class="row"><div><label>時間</label><select id="duration"><option value="20">20 秒</option><option value="30" selected>30 秒</option><option value="60">60 秒</option></select></div><div><label>難度</label><select id="difficulty"><option value=".75">簡單</option><option value="1" selected>標準</option><option value="1.35">困難</option></select></div></div>
+<label>模式</label><select id="mode"><option value="tracking">Tracking 跟槍</option><option value="flick">Flick 定位</option><option value="reaction">Reaction 反應</option><option value="dynamic">Dynamic Vision 動態視力</option></select>
+<div class="row"><div><label>時間</label><select id="duration"><option value="20">20 秒</option><option value="30" selected>30 秒</option><option value="60">60 秒</option><option value="120">2 分鐘</option><option value="300">5 分鐘</option></select></div><div><label>難度</label><select id="difficulty"><option value=".75">簡單</option><option value="1" selected>標準</option><option value="1.35">困難</option></select></div></div>
+<div class="row">
+  <div>
+    <label>移動靶速度</label>
+    <select id="moveSpeed">
+      <option value="199" selected>走路｜199</option>
+      <option value="299">跑步／空手｜299</option>
+    </select>
+  </div>
+  <div>
+    <label>速度基準</label>
+    <div class="metric"><b id="moveSpeedLabel">199</b><span>遊戲內速度</span></div>
+  </div>
+</div>
+<div class="small" style="margin-top:5px">反應模式：目標出現後 1 秒內未命中會自動消失；下一顆會出現在較近的位置，但保留最低距離避免黏在一起。</div><div class="small" style="margin-top:5px">動態視力：固定 5 分鐘。每 50 秒更換一種圖形，共 6 段：垂直鋸齒、五角星、∞ 字、圓形、水平鋸齒、菱形折返；球速會在快慢之間平滑變化。此模式不需要射擊或鎖定滑鼠。</div>
 <div class="row">
   <div><label>射擊模式</label>
     <select id="fireMode">
@@ -56,7 +86,7 @@ button{border:0;border-radius:9px;padding:10px;background:#263244;color:white;cu
 
 <div class="card"><h2>本輪成績</h2><div class="stats">
 <div class="stat"><span>分數</span><b id="score">0</b></div><div class="stat"><span>命中率</span><b id="acc">0%</b></div>
-<div class="stat"><span>平均反應</span><b id="rt">—</b></div><div class="stat"><span>剩餘</span><b id="time">0.0</b></div>
+<div class="stat"><span>平均反應</span><b id="rt">—</b></div><div class="stat"><span>剩餘</span><b id="time">0.0</b></div><div class="stat"><span>動態階段</span><b id="phase">—</b></div>
 </div></div>
 
 <div class="card"><h2>A/B 靈敏度盲測</h2>
@@ -74,13 +104,12 @@ button{border:0;border-radius:9px;padding:10px;background:#263244;color:white;cu
 <script>
 const $=x=>document.getElementById(x),arena=$("arena"),target=$("target"),cross=$("cross"),msg=$("msg");
 let run=false,startAt=0,endAt=0,raf=0,timer=0,score=0,shots=0,hits=0,rts=[],tx=0,ty=0,vx=0,vy=0,cx=0,cy=0,last=0;let fireTimer=0,leftHeld=false;
-let abMode=false,abRound=0,abOrder=[],abScores=[];let adsHeld=false;
+let abMode=false,abRound=0,abOrder=[],abScores=[];let adsHeld=false;let nextStrafeChange=0,strafeBias=1;let dynamicDir=1,dynamicPhase=-1;
 
 function calc(){
-  const d=parseFloat($("dpi").value)||0;
-  const raw=$("sens").value.trim().replace(",",".");
-  const parsed=parseFloat(raw);
-  if(!Number.isFinite(parsed)||parsed<=0){
+  const d=parseFreeNumber("dpi",NaN);
+  const parsed=parseFreeNumber("sens",NaN);
+  if(!Number.isFinite(parsed)||!Number.isFinite(d)){
     $("edpi").textContent="—"; $("cm360").textContent="—";
     if($("speedMul")) $("speedMul").textContent="—";
     if($("topSpeed")) $("topSpeed").textContent="—";
@@ -89,45 +118,275 @@ function calc(){
   const s=parsed;
   $("edpi").textContent=Math.round(d*s);
   const cm=2.54*360/(d*s*.022);
-  $("cm360").textContent=isFinite(cm)?cm.toFixed(1):"—";
-  const mul=s/0.32;
+  $("cm360").textContent=Number.isFinite(cm)?cm.toFixed(1):"—";
+  const mul=(d*s)/1280;
   if($("speedMul")) $("speedMul").textContent=mul.toFixed(2)+"×";
   if($("topSpeed")) $("topSpeed").textContent=mul.toFixed(2)+"×";
+  if($("adsEffective")){
+    const av=d*s*apexAdsAngularScale();
+    $("adsEffective").textContent=Number.isFinite(av)?Math.round(av):"—";
+  }
 }
-$("dpi").oninput=calc;calc();
+$("dpi").oninput=calc;
 
-$("mode").onchange=()=>{$("title").textContent=$("mode").value==="tracking"?"Tracking 跟槍":$("mode").value==="flick"?"Flick 定位":"Reaction 反應"};
+$("mode").onchange=()=>{
+  const m=$("mode").value;
+  $("title").textContent=
+    m==="tracking"?"Tracking 跟槍":
+    m==="flick"?"Flick 定位":
+    m==="reaction"?"Reaction 反應":
+    "Dynamic Vision 動態視力";
 
-function reset(){score=shots=hits=0;rts=[];$("score").textContent=0;$("acc").textContent="0%";$("rt").textContent="—";$("time").textContent="0.0"}
+  if(m==="dynamic"){
+    $("duration").value="300";
+    $("duration").disabled=true;
+    $("difficulty").disabled=true;
+    $("fireMode").disabled=true;
+    $("fireRate").disabled=true;
+  }else{
+    $("duration").disabled=false;
+    $("difficulty").disabled=false;
+    $("fireMode").disabled=false;
+    $("fireRate").disabled=false;
+  }
+};
+
+function reset(){score=shots=hits=0;rts=[];$("score").textContent=0;$("acc").textContent="0%";$("rt").textContent="—";$("time").textContent="0.0";if($("phase"))$("phase").textContent="—"}
 function stats(){$("score").textContent=Math.round(score);$("acc").textContent=shots?Math.round(hits/shots*100)+"%":"0%";$("rt").textContent=rts.length?Math.round(rts.reduce((a,b)=>a+b,0)/rts.length)+" ms":"—"}
-function place(moving=true){let r=+$("size").value/2,w=arena.clientWidth,h=arena.clientHeight;tx=r+Math.random()*(w-2*r);ty=r+Math.random()*(h-2*r);if(moving){let d=+$("difficulty").value,a=Math.random()*Math.PI*2,sp=(140+Math.random()*120)*d;vx=Math.cos(a)*sp;vy=Math.sin(a)*sp}target.style.width=r*2+"px";target.style.height=r*2+"px";target.style.left=tx+"px";target.style.top=ty+"px";target.classList.remove("hidden");target.dataset.since=performance.now()}
-function reaction(){target.classList.add("hidden");clearTimeout(timer);timer=setTimeout(()=>{if(run)place(false)},700+Math.random()*1700)}
-function begin(){
-  if(run)return;
-  reset();
-  run=true;
-  $("start").disabled=true;
-  $("stop").disabled=false;
-  cx=arena.clientWidth/2;cy=arena.clientHeight/2;
-  cross.style.left=cx+"px";cross.style.top=cy+"px";
+function place(moving=true){let r=responsiveTargetSize()/2,w=arena.clientWidth,h=arena.clientHeight;tx=r+Math.random()*(w-2*r);ty=r+Math.random()*(h-2*r);if(moving){let d=+$("difficulty").value,a=Math.random()*Math.PI*2,sp=(140+Math.random()*120)*d;vx=Math.cos(a)*sp;vy=Math.sin(a)*sp}target.style.width=r*2+"px";target.style.height=r*2+"px";target.style.left=tx+"px";target.style.top=ty+"px";target.classList.remove("hidden");target.dataset.since=performance.now()}
+function reaction(){
   target.classList.add("hidden");
-  msg.classList.remove("hidden");
-  msg.innerHTML="<h3>點一下測試區域</h3><div class='small'>瀏覽器需要你親自點擊場地，才能鎖定滑鼠。鎖定後測試才會開始；按 Esc 可解除。</div>";
+
+  // Random delay before the next reaction target appears.
+  const wait=450+Math.random()*950;
+  clearTimeout(reaction._showTimer);
+  clearTimeout(reaction._hideTimer);
+
+  reaction._showTimer=setTimeout(()=>{
+    if(!run || $("mode").value!=="reaction") return;
+
+    const r=responsiveTargetSize()/2;
+    const w=arena.clientWidth, h=arena.clientHeight;
+
+    // v3.0: unbiased left/right reaction placement.
+    let nx=tx, ny=ty, tries=0;
+    const wantLeft=Math.random()<0.5;
+    const pad=r+28, gap=24;
+    do{
+      nx=wantLeft
+        ? pad+Math.random()*Math.max(1,(w/2-gap)-pad)
+        : (w/2+gap)+Math.random()*Math.max(1,(w-pad)-(w/2+gap));
+      ny=pad+Math.random()*Math.max(1,h-pad*2);
+      tries++;
+    }while((Math.hypot(nx-tx,ny-ty)<120 || Math.hypot(nx-tx,ny-ty)>430) && tries<30);
+
+    tx=nx; ty=ny;
+    target.style.left=tx+"px";
+    target.style.top=ty+"px";
+    target.classList.remove("hidden");
+    target.dataset.since=performance.now();
+
+    // Missed reaction: hide automatically after 2 seconds,
+    // count it as a shot/miss, then schedule the next target.
+    reaction._hideTimer=setTimeout(()=>{
+      if(!run || $("mode").value!=="reaction") return;
+      if(target.classList.contains("hidden")) return;
+
+      target.classList.add("hidden");
+      shots++;
+      score=Math.max(0,score-40);
+      stats();
+
+      reaction();
+    },1000);
+  },wait);
 }
-function finish(){if(!run)return;run=false;startAt=0;endAt=0;stopContinuousFire();leftHeld=false;adsHeld=false;updateADSIndicator();cancelAnimationFrame(raf);clearTimeout(timer);target.classList.add("hidden");$("start").disabled=false;$("stop").disabled=true;document.exitPointerLock?.();let rt=rts.length?Math.round(rts.reduce((a,b)=>a+b,0)/rts.length):null;let rec={date:new Date().toLocaleString(),mode:$("mode").value,dpi:+$("dpi").value,sens:+$("sens").value,ads:+$("ads").value,score:Math.round(score),acc:shots?Math.round(hits/shots*100):0,rt};save(rec);msg.classList.remove("hidden");msg.innerHTML="<h3>完成！</h3><div class='small'>分數 <b>"+rec.score+"</b>　命中率 <b>"+rec.acc+"%</b>"+(rt?"　平均反應 <b>"+rt+" ms</b>":"")+"</div>";if(abMode)nextAB(rec)}
-function loop(now){if(!run)return;let dt=Math.min(.033,(now-last)/1000);last=now;let left=Math.max(0,endAt-now);$("time").textContent=(left/1000).toFixed(1);if($("mode").value==="tracking"){let r=+$("size").value/2,w=arena.clientWidth,h=arena.clientHeight;tx+=vx*dt;ty+=vy*dt;if(tx<r||tx>w-r){vx*=-1;tx=Math.max(r,Math.min(w-r,tx))}if(ty<r||ty>h-r){vy*=-1;ty=Math.max(r,Math.min(h-r,ty))}target.style.left=tx+"px";target.style.top=ty+"px";if(Math.hypot(cx-tx,cy-ty)<r)score+=dt*100}stats();if(left<=0)return finish();raf=requestAnimationFrame(loop)}
+
+function startDynamicVision(){
+  startAt=performance.now();
+  endAt=startAt+300000;
+  last=startAt;
+  dynamicDir=1;
+  dynamicPhase=0;
+  updateDynamicVision.dx=1;
+  updateDynamicVision.dy=1;
+  updateDynamicVision.pathDist=0;
+  updateDynamicVision.lastNow=null;
+  updateDynamicVision.lastPhase=-1;
+
+  const r=responsiveTargetSize()/2;
+  const w=arena.clientWidth,h=arena.clientHeight;
+  tx=w/2;
+  ty=h/2;
+  target.style.width=(r*2)+"px";
+  target.style.height=(r*2)+"px";
+  target.style.left=tx+"px";
+  target.style.top=ty+"px";
+  target.classList.remove("hidden");
+  cross.style.display="none";
+  msg.classList.add("hidden");
+  if($("phase")) $("phase").textContent="上下移動";
+  loop(last);
+}
+
+function updateDynamicVision(now,dt){
+  const r=responsiveTargetSize()/2;
+  const w=arena.clientWidth,h=arena.clientHeight;
+  const elapsed=(now-startAt)/1000;
+  const phase=Math.min(5,Math.floor(elapsed/50));
+  const local=elapsed-phase*50;
+
+  // Smooth, irregular speed changes: the ball glides between slow and fast
+  // instead of snapping abruptly. Range is roughly 0.65x–1.45x.
+  const waveA=Math.sin(elapsed*0.63);
+  const waveB=Math.sin(elapsed*0.21+1.7);
+  const speedFactor=Math.max(0.65,Math.min(1.45,1.0+0.28*waveA+0.18*waveB));
+  const baseSpeed=0.78*speedFactor*targetMoveScale();
+
+  // Helpers for sampling a polyline at constant-ish path speed.
+  function pointOnPolyline(points,dist){
+    let lengths=[],total=0;
+    for(let i=0;i<points.length-1;i++){
+      const dx=points[i+1][0]-points[i][0];
+      const dy=points[i+1][1]-points[i][1];
+      const len=Math.hypot(dx,dy);
+      lengths.push(len); total+=len;
+    }
+    if(total<=0)return points[0];
+    let d=((dist%total)+total)%total;
+    for(let i=0;i<lengths.length;i++){
+      if(d<=lengths[i]){
+        const t=lengths[i]===0?0:d/lengths[i];
+        return [
+          points[i][0]+(points[i+1][0]-points[i][0])*t,
+          points[i][1]+(points[i+1][1]-points[i][1])*t
+        ];
+      }
+      d-=lengths[i];
+    }
+    return points[points.length-1];
+  }
+
+  // Integrate a virtual path distance so speed can vary smoothly.
+  if(updateDynamicVision.lastNow==null || phase!==updateDynamicVision.lastPhase){
+    updateDynamicVision.pathDist=0;
+    updateDynamicVision.lastNow=now;
+    updateDynamicVision.lastPhase=phase;
+  }
+  updateDynamicVision.pathDist += baseSpeed*220*dt;
+
+  const pad=Math.max(28,r+22);
+  const left=pad, right=w-pad, top=pad, bottom=h-pad;
+  const cx=w/2, cy=h/2;
+  let p=[cx,cy];
+
+  if(phase===0){
+    // Vertical zigzag
+    const x1=w*0.34, x2=w*0.66;
+    const pts=[
+      [x1,bottom],[x1,top],[x2,bottom],[x2,top],
+      [x1,bottom],[x1,top],[x2,bottom]
+    ];
+    p=pointOnPolyline(pts,updateDynamicVision.pathDist);
+    if($("phase")) $("phase").textContent="1/6 垂直鋸齒";
+  }else if(phase===1){
+    // Five-point star
+    const outer=Math.min(w,h)*0.38;
+    const star=[];
+    for(let i=0;i<5;i++){
+      const a=-Math.PI/2+i*2*Math.PI/5;
+      star.push([cx+Math.cos(a)*outer,cy+Math.sin(a)*outer]);
+    }
+    const order=[0,2,4,1,3,0];
+    const pts=order.map(i=>star[i]);
+    p=pointOnPolyline(pts,updateDynamicVision.pathDist);
+    if($("phase")) $("phase").textContent="2/6 五角星";
+  }else if(phase===2){
+    // Infinity / lemniscate
+    const t=updateDynamicVision.pathDist/170;
+    const rx=Math.min(w*0.36,(right-left)*0.46);
+    const ry=Math.min(h*0.28,(bottom-top)*0.42);
+    p=[
+      cx+Math.sin(t)*rx,
+      cy+Math.sin(t*2)*ry
+    ];
+    if($("phase")) $("phase").textContent="3/6 ∞ 字";
+  }else if(phase===3){
+    // Circle
+    const rad=Math.min((right-left),(bottom-top))*0.36;
+    const t=updateDynamicVision.pathDist/Math.max(1,rad);
+    p=[
+      cx+Math.cos(t)*rad,
+      cy+Math.sin(t)*rad
+    ];
+    if($("phase")) $("phase").textContent="4/6 圓形";
+  }else if(phase===4){
+    // Horizontal zigzag
+    const y1=h*0.24,y2=h*0.40,y3=h*0.56,y4=h*0.72;
+    const pts=[
+      [left,y1],[right,y1],[left,y2],[right,y2],
+      [left,y3],[right,y3],[left,y4],[right,y4]
+    ];
+    p=pointOnPolyline(pts,updateDynamicVision.pathDist);
+    if($("phase")) $("phase").textContent="5/6 水平鋸齒";
+  }else{
+    // Diamond / diagonal return path
+    const pts=[
+      [cx,top],[right,cy],[cx,bottom],[left,cy],[cx,top],
+      [cx,bottom],[right,cy],[left,cy],[cx,top]
+    ];
+    p=pointOnPolyline(pts,updateDynamicVision.pathDist);
+    if($("phase")) $("phase").textContent="6/6 菱形折返";
+  }
+
+  tx=Math.max(r,Math.min(w-r,p[0]));
+  ty=Math.max(r,Math.min(h-r,p[1]));
+  target.style.left=tx+"px";
+  target.style.top=ty+"px";
+}
+
+function finish(){if(!run)return;cross.style.display="";run=false;startAt=0;endAt=0;clearTimeout(reaction._showTimer);clearTimeout(reaction._hideTimer);stopContinuousFire();leftHeld=false;adsHeld=false;updateADSIndicator();cancelAnimationFrame(raf);clearTimeout(timer);target.classList.add("hidden");$("start").disabled=false;$("stop").disabled=true;document.exitPointerLock?.();let rt=rts.length?Math.round(rts.reduce((a,b)=>a+b,0)/rts.length):null;let rec={date:new Date().toLocaleString(),mode:$("mode").value,dpi:+$("dpi").value,sens:+$("sens").value,ads:+$("ads").value,score:Math.round(score),acc:shots?Math.round(hits/shots*100):0,rt};save(rec);msg.classList.remove("hidden");msg.innerHTML=$("mode").value==="dynamic"?"<h3>動態視力訓練完成！</h3><div class='small'>已完成 6 組 × 50 秒的動態視力訓練。</div>":"<h3>完成！</h3><div class='small'>分數 <b>"+rec.score+"</b>　命中率 <b>"+rec.acc+"%</b>"+(rt?"　平均反應 <b>"+rt+" ms</b>":"")+"</div>";if(abMode)nextAB(rec)}
+function loop(now){
+  if(!run)return;
+  let dt=Math.min(.033,(now-last)/1000);
+  last=now;
+  let left=Math.max(0,endAt-now);
+  $("time").textContent=(left/1000).toFixed(1);
+
+  const mode=$("mode").value;
+
+  if(mode==="tracking"){
+    let r=responsiveTargetSize()/2,w=arena.clientWidth,h=arena.clientHeight;
+    irregularTracking(now);
+    tx += vx*dt*targetMoveScale();
+    ty += vy*dt*targetMoveScale();
+    if(tx<r||tx>w-r){vx*=-1;tx=Math.max(r,Math.min(w-r,tx))}
+    if(ty<r||ty>h-r){vy*=-1;ty=Math.max(r,Math.min(h-r,ty))}
+    target.style.left=tx+"px";
+    target.style.top=ty+"px";
+    if(Math.hypot(cx-tx,cy-ty)<r)score+=dt*100;
+    stats();
+  }else if(mode==="dynamic"){
+    updateDynamicVision(now,dt);
+  }
+
+  if(left<=0)return finish();
+  raf=requestAnimationFrame(loop);
+}
 
 arena.onmousemove=e=>{
   if(!run||document.pointerLockElement!==arena)return;
 
   // 0.32 is the baseline. 0.16 = half speed, 0.64 = double speed.
-  const hipSens=parseDecimalInput("sens",0.32);
-  const adsMultiplier=parseDecimalInput("ads",1.0);
+  const dpi=parseFreeNumber("dpi",4000);
+  const hipSens=parseFreeNumber("sens",0.32);
+  const hipEDPI=dpi*hipSens;
 
-  // Hipfire uses the entered Apex sensitivity.
-  // Holding RMB switches to hip sensitivity × ADS multiplier.
-  const activeSens=adsHeld ? hipSens*adsMultiplier : hipSens;
-  const speedMultiplier=activeSens/0.32;
+  // v3.0: actual cursor displacement is driven by eDPI.
+  // 1280 eDPI (4000 × 0.32) remains the original 1.00× calibration baseline.
+  // ADS additionally applies Apex-style focal-length/FOV scaling and the user's ADS multiplier.
+  const hipScale=hipEDPI/1280;
+  const speedMultiplier=adsHeld ? hipScale*apexAdsAngularScale() : hipScale;
 
   const dx=e.movementX*speedMultiplier;
   const dy=e.movementY*speedMultiplier;
@@ -139,8 +398,9 @@ arena.onmousemove=e=>{
 };
 
 function doShot(){
+  if($("mode").value==="dynamic") return;
   if(!run || document.pointerLockElement!==arena) return;
-  const r=+$("size").value/2;
+  const r=responsiveTargetSize()/2;
   const visible=!target.classList.contains("hidden");
   const hit=visible && Math.hypot(cx-tx,cy-ty)<=r;
   shots++;
@@ -154,7 +414,13 @@ function doShot(){
       const rt=performance.now()-+target.dataset.since;
       rts.push(rt);
       score+=Math.max(10,1200-rt);
-      m==="reaction"?reaction():place(false);
+      if(m==="reaction"){
+        clearTimeout(reaction._hideTimer);
+        target.classList.add("hidden");
+        reaction();
+      }else{
+        place(false);
+      }
     }
   }else if($("mode").value!=="tracking"){
     score=Math.max(0,score-40);
@@ -233,14 +499,15 @@ function updateADSIndicator(){
   const ind=$("adsState");
   if(!ind)return;
   if(adsHeld){
-    const a=parseDecimalInput("ads",1.0);
-    ind.textContent="ADS "+a.toFixed(2)+"×";
+    const a=parseFreeNumber("ads",1.0);
+    const o=parseFreeNumber("optic",1);
+    ind.textContent="ADS "+o+"×｜倍率 "+a;
   }else{
     ind.textContent="腰射";
   }
 }
 document.addEventListener("pointerlockchange",()=>{
-  if(!run)return;
+  if(!run || $("mode").value==="dynamic")return;
   if(document.pointerLockElement===arena){
     msg.classList.add("hidden");
     if(!startAt || performance.now()>=endAt){
@@ -248,6 +515,7 @@ document.addEventListener("pointerlockchange",()=>{
       endAt=startAt+(+$("duration").value*1000);
       let m=$("mode").value;
       if(m==="reaction")reaction();else place(m==="tracking");
+      if(m==="tracking") scheduleStrafeChange(performance.now());
       last=performance.now();
       loop(last);
     }
@@ -262,6 +530,43 @@ document.addEventListener("pointerlockchange",()=>{
   }
 });
 
+
+function begin(){
+  if(run) return;
+
+  reset();
+  run=true;
+  startAt=0;
+  endAt=0;
+  adsHeld=false;
+  leftHeld=false;
+  stopContinuousFire();
+
+  clearTimeout(reaction._showTimer);
+  clearTimeout(reaction._hideTimer);
+  cancelAnimationFrame(raf);
+  clearTimeout(timer);
+
+  cx=arena.clientWidth/2;
+  cy=arena.clientHeight/2;
+  cross.style.left=cx+"px";
+  cross.style.top=cy+"px";
+
+  target.classList.add("hidden");
+  $("start").disabled=true;
+  $("stop").disabled=false;
+
+  if($("mode").value==="dynamic"){
+    document.exitPointerLock?.();
+    startDynamicVision();
+    return;
+  }
+
+  cross.style.display="";
+  msg.classList.remove("hidden");
+  msg.innerHTML="<h3>點一下測試區域</h3><div class='small'>點場地後鎖定滑鼠並開始測試。Esc 可解除鎖定。</div>";
+}
+
 $("start").onclick=begin;$("stop").onclick=finish;
 
 function records(){try{return JSON.parse(localStorage.getItem("apexLab")||"[]")}catch{return[]}}
@@ -274,15 +579,6 @@ $("csv").onclick=()=>{let x=records();if(!x.length)return alert("目前沒有紀
 $("ab").onclick=()=>{if(run)return;let A=parseDecimalInput("a",0.30),B=parseDecimalInput("b",0.34);if(!(A>0&&B>0)||A===B)return alert("請輸入兩個不同靈敏度");abMode=true;abRound=0;abScores=[];abOrder=Math.random()<.5?[A,B]:[B,A];$("sens").value=abOrder[0];$("sens").style.webkitTextSecurity="disc";calc();$("abtxt").textContent="盲測第 1 / 2 輪：目前靈敏度已隱藏。";begin()};
 function nextAB(rec){abScores.push({...rec,secret:abOrder[abRound]});abRound++;if(abRound<2){$("sens").value=abOrder[1];calc();$("abtxt").textContent="盲測第 2 / 2 輪即將開始…";setTimeout(()=>{if(abMode&&!run)begin()},900)}else{abMode=false;$("sens").style.webkitTextSecurity="";let x=abScores[0],y=abScores[1],w=x.score===y.score?null:(x.score>y.score?x:y);$("sens").value=w?w.secret:x.secret;calc();$("abtxt").innerHTML="公布：第1輪 = "+x.secret+"（"+x.score+"分），第2輪 = "+y.secret+"（"+y.score+"分）。<br><b>"+(w?"較高分："+w.secret:"兩者平手")+"</b>"}}
 
-document.addEventListener("keydown",e=>{
-  if(e.key==="1"||e.key==="2"||e.key==="3"){
-    const vals={"1":"0.10","2":"0.32","3":"1.00"};
-    $("sens").value=vals[e.key];
-    calc();
-  }
-});
-
-
 $("fireMode").onchange=()=>{
   stopContinuousFire();
   if(run && document.pointerLockElement===arena && $("fireMode").value==="auto") startContinuousFire();
@@ -294,36 +590,134 @@ $("fireRate").onchange=()=>{
 };
 
 
-function parseDecimalInput(id,fallback){
+function parseFreeNumber(id,fallback){
   const raw=$(id).value.trim().replace(",",".");
-  const n=parseFloat(raw);
-  return Number.isFinite(n)&&n>0?n:fallback;
+  const n=Number(raw);
+  return Number.isFinite(n)?n:fallback;
 }
+function parseDecimalInput(id,fallback){ return parseFreeNumber(id,fallback); }
 
-["sens","ads","a","b"].forEach(id=>{
+// All editable numeric fields are intentionally unrestricted.
+// We never clamp, round, rewrite, or auto-correct what the user types.
+["dpi","sens","ads","a","b"].forEach(id=>{
   const el=$(id);
   el.addEventListener("input",()=>{
-    let v=el.value.replace(",",".").replace(/[^0-9.]/g,"");
-    const firstDot=v.indexOf(".");
-    if(firstDot!==-1){
-      v=v.slice(0,firstDot+1)+v.slice(firstDot+1).replace(/\./g,"");
-    }
-    if(el.value!==v) el.value=v;
-    if(id==="sens") calc();
-    if(id==="ads" && adsHeld) updateADSIndicator();
-  });
-  el.addEventListener("blur",()=>{
-    const fallback=id==="ads"?1.0:(id==="sens"?0.32:(id==="a"?0.30:0.34));
-    const n=parseDecimalInput(id,fallback);
-    el.value=n.toFixed(2);
-    if(id==="sens") calc();
+    if(id==="dpi" || id==="sens" || id==="ads") refreshAimMetrics();
     if(id==="ads" && adsHeld) updateADSIndicator();
   });
 });
 
-document.querySelectorAll('input[type="number"]').forEach(el=>{
-  el.addEventListener("wheel",e=>e.preventDefault(),{passive:false});
+
+
+// v3.0: removed numeric-key debug shortcuts so typing 1/2/3 never changes sensitivity.
+
+function targetMoveScale(){
+  // Apex reference speeds supplied for this trainer:
+  // walking = 199, holstered/sprint = 299.
+  const gameSpeed=parseFreeNumber("moveSpeed",199);
+  return gameSpeed/199;
+}
+function refreshMoveSpeedLabel(){
+  const v=parseFreeNumber("moveSpeed",199);
+  if($("moveSpeedLabel")) $("moveSpeedLabel").textContent=v;
+}
+$("moveSpeed").addEventListener("change",refreshMoveSpeedLabel);
+refreshMoveSpeedLabel();
+
+
+const APEX_OPTIC_FOV_MULTI={
+  1:60/70,
+  2:42.424/70,
+  3:28.903/70,
+  4:21.847/70,
+  6:14.644/70,
+  8:11.004/70,
+  10:8.813/70
+};
+
+function apexHipFov43(){
+  const f=parseFreeNumber("fov",110);
+  return 70*(1+(f-70)*0.01375);
+}
+function apexAdsAngularScale(){
+  const optic=parseFreeNumber("optic",1);
+  const hip=apexHipFov43();
+  const multi=APEX_OPTIC_FOV_MULTI[optic] || (1/optic);
+  const scope=hip*multi;
+  const rad=Math.PI/360;
+  const focalScale=Math.tan(scope*rad)/Math.tan(hip*rad);
+  const ads=parseFreeNumber("ads",1);
+  return focalScale*ads;
+}
+function refreshAimMetrics(){
+  calc();
+  const dpi=parseFreeNumber("dpi",NaN);
+  const sens=parseFreeNumber("sens",NaN);
+  if($("adsEffective")){
+    const v=dpi*sens*apexAdsAngularScale();
+    $("adsEffective").textContent=Number.isFinite(v)?Math.round(v):"—";
+  }
+  if(adsHeld) updateADSIndicator();
+}
+["fov","optic"].forEach(id=>{
+  const el=$(id);
+  el.addEventListener("input",refreshAimMetrics);
+  el.addEventListener("change",refreshAimMetrics);
 });
+
+setTimeout(refreshAimMetrics,0);
+
+function scheduleStrafeChange(now){
+  // Change direction/timing irregularly, but keep it readable enough for tracking practice.
+  nextStrafeChange=now + 520 + Math.random()*1150;
+}
+function irregularTracking(now){
+  if(now < nextStrafeChange) return;
+
+  const w=arena.clientWidth, h=arena.clientHeight;
+  const nx=tx/w, ny=ty/h;
+  let dirX=Math.sign(vx || (Math.random()<0.5?-1:1));
+  let dirY=Math.sign(vy || (Math.random()<0.5?-1:1));
+
+  if(nx<0.18) dirX=1;
+  else if(nx>0.82) dirX=-1;
+  else if(Math.random()<0.30) dirX*=-1;
+
+  if(ny<0.18) dirY=1;
+  else if(ny>0.82) dirY=-1;
+  else if(Math.random()<0.28) dirY*=-1;
+
+  // Always rebuild from a fixed base. Randomness no longer compounds speed.
+  // targetMoveScale() separately applies 199 walking or 299 running.
+  const horizontalBase=115;
+  const verticalBase=42;
+  vx=dirX*horizontalBase*(0.90+Math.random()*0.20);
+  vy=dirY*verticalBase*(0.85+Math.random()*0.30);
+
+  nextStrafeChange=now+520+Math.random()*1150;
+}
+
+
+function responsiveTargetSize(){
+  const base=parseFreeNumber("size",48);
+  // Scale from a 1920×1080 reference using the smaller axis ratio,
+  // so the target keeps a similar visual proportion without becoming oversized.
+  const sx=arena.clientWidth/1920;
+  const sy=arena.clientHeight/1080;
+  const scale=Math.sqrt(Math.max(0.25,sx)*Math.max(0.25,sy));
+  // Moderate clamp keeps laptop/mobile-sized browser windows usable.
+  const safeScale=Math.max(0.72,Math.min(1.45,scale));
+  return base*safeScale;
+}
+function applyResponsiveTargetSize(){
+  const px=responsiveTargetSize();
+  target.style.width=px+"px";
+  target.style.height=px+"px";
+  if($("targetSizeNow")) $("targetSizeNow").textContent=Math.round(px)+" × "+Math.round(px)+" px";
+}
+$("size").addEventListener("change",applyResponsiveTargetSize);
+window.addEventListener("resize",applyResponsiveTargetSize);
+setTimeout(applyResponsiveTargetSize,0);
 
 </script>
 
