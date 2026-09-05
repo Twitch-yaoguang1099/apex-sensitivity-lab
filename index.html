@@ -23,11 +23,11 @@ button{border:0;border-radius:9px;padding:10px;background:#263244;color:white;cu
 </head>
 <body>
 <aside class="side">
-<h1>Apex Sensitivity Lab <span style='font-size:11px;color:#41d17d'>v1.4</span></h1><div class="sub">跟槍、定位、反應、A/B 盲測。紀錄只存在你的瀏覽器。</div>
+<h1>Apex Sensitivity Lab <span style='font-size:11px;color:#41d17d'>v1.5</span></h1><div class="sub">跟槍、定位、反應、A/B 盲測。紀錄只存在你的瀏覽器。</div>
 
 <div class="card"><h2>靈敏度</h2>
-<div class="row"><div><label>DPI</label><input id="dpi" type="number" value="4000" step="50"></div><div><label>Apex 腰射</label><input id="sens" type="number" value="0.32" step="0.01"></div></div>
-<div class="row"><div><label>ADS 倍率</label><input id="ads" type="number" value="1.00" step="0.05"></div><div><label>目標大小</label><select id="size"><option value="34">小</option><option value="48" selected>中</option><option value="66">大</option></select></div></div>
+<div class="row"><div><label>DPI</label><input id="dpi" type="number" value="4000" step="50"></div><div><label>Apex 腰射</label><input id="sens" type="text" inputmode="decimal" value="0.32" autocomplete="off" spellcheck="false"></div></div>
+<div class="row"><div><label>ADS 倍率</label><input id="ads" type="text" inputmode="decimal" value="1.00" autocomplete="off" spellcheck="false"></div><div><label>目標大小</label><select id="size"><option value="34">小</option><option value="48" selected>中</option><option value="66">大</option></select></div></div>
 <div class="stats" style="margin-top:9px"><div class="stat"><span>eDPI</span><b id="edpi"></b></div><div class="stat"><span>約 cm/360</span><b id="cm360"></b></div></div>
 <div class="small" style="margin-top:7px">cm/360 以 Apex 常用 yaw 0.022°/count 估算。瀏覽器與遊戲 Raw Input 不會完全 1:1，適合用來比較不同靈敏度的相對表現。</div><div class="small" style="margin-top:5px">準星速度會直接跟隨「Apex 腰射」數值：例如 0.16 約為 0.32 的一半速度，0.64 約為兩倍速度。</div><div class="stat" style="margin-top:8px"><span>目前準星速度倍率（以 0.32 = 1.00×）</span><b id="speedMul">1.00×</b></div>
 </div>
@@ -60,7 +60,7 @@ button{border:0;border-radius:9px;padding:10px;background:#263244;color:white;cu
 </div></div>
 
 <div class="card"><h2>A/B 靈敏度盲測</h2>
-<div class="row"><div><label>A</label><input id="a" type="number" step=".01" value=".30"></div><div><label>B</label><input id="b" type="number" step=".01" value=".34"></div></div>
+<div class="row"><div><label>A</label><input id="a" type="text" inputmode="decimal" value="0.30" autocomplete="off" spellcheck="false"></div><div><label>B</label><input id="b" type="text" inputmode="decimal" value="0.34" autocomplete="off" spellcheck="false"></div></div>
 <button id="ab" class="good" style="width:100%;margin-top:9px">開始 A/B 盲測</button><div id="abtxt" class="small" style="margin-top:7px">隨機安排兩輪，完成後才公布哪輪是哪個靈敏度。</div></div>
 
 <div class="card"><h2>歷史紀錄</h2><div class="btns"><button id="clear">清除</button><button id="csv">匯出 CSV</button></div><div id="results" class="results"></div></div>
@@ -77,15 +77,24 @@ let run=false,startAt=0,endAt=0,raf=0,timer=0,score=0,shots=0,hits=0,rts=[],tx=0
 let abMode=false,abRound=0,abOrder=[],abScores=[];let adsHeld=false;
 
 function calc(){
-  let d=+$("dpi").value||0,s=+$("sens").value||0;
+  const d=parseFloat($("dpi").value)||0;
+  const raw=$("sens").value.trim().replace(",",".");
+  const parsed=parseFloat(raw);
+  if(!Number.isFinite(parsed)||parsed<=0){
+    $("edpi").textContent="—"; $("cm360").textContent="—";
+    if($("speedMul")) $("speedMul").textContent="—";
+    if($("topSpeed")) $("topSpeed").textContent="—";
+    return;
+  }
+  const s=parsed;
   $("edpi").textContent=Math.round(d*s);
-  let cm=2.54*360/(d*s*.022);
+  const cm=2.54*360/(d*s*.022);
   $("cm360").textContent=isFinite(cm)?cm.toFixed(1):"—";
   const mul=s/0.32;
-  const sm=$("speedMul");
-  if(sm) sm.textContent=(isFinite(mul)?mul:0).toFixed(2)+"×"; const ts=$("topSpeed"); if(ts) ts.textContent=(isFinite(mul)?mul:0).toFixed(2)+"×";
+  if($("speedMul")) $("speedMul").textContent=mul.toFixed(2)+"×";
+  if($("topSpeed")) $("topSpeed").textContent=mul.toFixed(2)+"×";
 }
-["dpi","sens"].forEach(x=>$(x).oninput=calc);$("ads").oninput=()=>{if(adsHeld)updateADSIndicator();};calc();
+$("dpi").oninput=calc;calc();
 
 $("mode").onchange=()=>{$("title").textContent=$("mode").value==="tracking"?"Tracking 跟槍":$("mode").value==="flick"?"Flick 定位":"Reaction 反應"};
 
@@ -112,10 +121,8 @@ arena.onmousemove=e=>{
   if(!run||document.pointerLockElement!==arena)return;
 
   // 0.32 is the baseline. 0.16 = half speed, 0.64 = double speed.
-  const enteredSens=parseFloat($("sens").value);
-  const hipSens=Number.isFinite(enteredSens)&&enteredSens>0?enteredSens:0.32;
-  const enteredAds=parseFloat($("ads").value);
-  const adsMultiplier=Number.isFinite(enteredAds)&&enteredAds>0?enteredAds:1.0;
+  const hipSens=parseDecimalInput("sens",0.32);
+  const adsMultiplier=parseDecimalInput("ads",1.0);
 
   // Hipfire uses the entered Apex sensitivity.
   // Holding RMB switches to hip sensitivity × ADS multiplier.
@@ -226,7 +233,7 @@ function updateADSIndicator(){
   const ind=$("adsState");
   if(!ind)return;
   if(adsHeld){
-    const a=parseFloat($("ads").value)||1;
+    const a=parseDecimalInput("ads",1.0);
     ind.textContent="ADS "+a.toFixed(2)+"×";
   }else{
     ind.textContent="腰射";
@@ -264,7 +271,7 @@ render();
 $("clear").onclick=()=>{if(confirm("確定清除紀錄？")){localStorage.removeItem("apexLab");render()}};
 $("csv").onclick=()=>{let x=records();if(!x.length)return alert("目前沒有紀錄");let rows=[["date","mode","dpi","sens","ads","score","accuracy","avg_rt_ms"],...x.map(r=>[r.date,r.mode,r.dpi,r.sens,r.ads,r.score,r.acc,r.rt??""])];let csv=rows.map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(",")).join("\n");let blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}),u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download="apex-sensitivity-results.csv";a.click();URL.revokeObjectURL(u)};
 
-$("ab").onclick=()=>{if(run)return;let A=+$("a").value,B=+$("b").value;if(!(A>0&&B>0)||A===B)return alert("請輸入兩個不同靈敏度");abMode=true;abRound=0;abScores=[];abOrder=Math.random()<.5?[A,B]:[B,A];$("sens").value=abOrder[0];$("sens").style.webkitTextSecurity="disc";calc();$("abtxt").textContent="盲測第 1 / 2 輪：目前靈敏度已隱藏。";begin()};
+$("ab").onclick=()=>{if(run)return;let A=parseDecimalInput("a",0.30),B=parseDecimalInput("b",0.34);if(!(A>0&&B>0)||A===B)return alert("請輸入兩個不同靈敏度");abMode=true;abRound=0;abScores=[];abOrder=Math.random()<.5?[A,B]:[B,A];$("sens").value=abOrder[0];$("sens").style.webkitTextSecurity="disc";calc();$("abtxt").textContent="盲測第 1 / 2 輪：目前靈敏度已隱藏。";begin()};
 function nextAB(rec){abScores.push({...rec,secret:abOrder[abRound]});abRound++;if(abRound<2){$("sens").value=abOrder[1];calc();$("abtxt").textContent="盲測第 2 / 2 輪即將開始…";setTimeout(()=>{if(abMode&&!run)begin()},900)}else{abMode=false;$("sens").style.webkitTextSecurity="";let x=abScores[0],y=abScores[1],w=x.score===y.score?null:(x.score>y.score?x:y);$("sens").value=w?w.secret:x.secret;calc();$("abtxt").innerHTML="公布：第1輪 = "+x.secret+"（"+x.score+"分），第2輪 = "+y.secret+"（"+y.score+"分）。<br><b>"+(w?"較高分："+w.secret:"兩者平手")+"</b>"}}
 
 document.addEventListener("keydown",e=>{
@@ -285,6 +292,38 @@ $("fireRate").onchange=()=>{
     if($("fireMode").value==="auto" || ($("fireMode").value==="hold" && leftHeld)) startContinuousFire();
   }
 };
+
+
+function parseDecimalInput(id,fallback){
+  const raw=$(id).value.trim().replace(",",".");
+  const n=parseFloat(raw);
+  return Number.isFinite(n)&&n>0?n:fallback;
+}
+
+["sens","ads","a","b"].forEach(id=>{
+  const el=$(id);
+  el.addEventListener("input",()=>{
+    let v=el.value.replace(",",".").replace(/[^0-9.]/g,"");
+    const firstDot=v.indexOf(".");
+    if(firstDot!==-1){
+      v=v.slice(0,firstDot+1)+v.slice(firstDot+1).replace(/\./g,"");
+    }
+    if(el.value!==v) el.value=v;
+    if(id==="sens") calc();
+    if(id==="ads" && adsHeld) updateADSIndicator();
+  });
+  el.addEventListener("blur",()=>{
+    const fallback=id==="ads"?1.0:(id==="sens"?0.32:(id==="a"?0.30:0.34));
+    const n=parseDecimalInput(id,fallback);
+    el.value=n.toFixed(2);
+    if(id==="sens") calc();
+    if(id==="ads" && adsHeld) updateADSIndicator();
+  });
+});
+
+document.querySelectorAll('input[type="number"]').forEach(el=>{
+  el.addEventListener("wheel",e=>e.preventDefault(),{passive:false});
+});
 
 </script>
 
